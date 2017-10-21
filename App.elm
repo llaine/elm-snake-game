@@ -5,6 +5,7 @@ import Html exposing (Html, div, text, program)
 import Svg exposing (..)
 import Svg.Attributes exposing (..)
 import List exposing (..)
+import Keyboard
 
 
 -- MODEL
@@ -27,8 +28,9 @@ init =
 -- MESSAGES
 
 
-type Msg
-    = NoOp
+type Msg =
+    NoOp
+    | KeyMsg Keyboard.KeyCode
 
 
 cellIsBody: Position -> Int -> Int -> Bool
@@ -100,6 +102,11 @@ view model =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        KeyMsg code ->
+            let
+                bodyUpdated=model.snakeBody -- TODO
+            in
+                ( Model model.snakeBody Down , Cmd.none )
         NoOp ->
             ( model, Cmd.none )
 
@@ -110,7 +117,8 @@ update msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.none
+        Sub.batch
+            [ Keyboard.downs KeyMsg]
 
 
 
