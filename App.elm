@@ -4,18 +4,14 @@ import Array exposing (Array)
 import Html exposing (Html, div, text, program)
 import Svg exposing (..)
 import Svg.Attributes exposing (..)
+import List exposing (..)
 
 
 -- MODEL
 
-type alias Grid =
-    Array (Array (Maybe (Int, Int)))
-
-
 type Direction = Up | Down | Left | Right
 type alias Position = { x: Int, y: Int }
 type alias Model = { snakeBody: List Position, direction: Direction }
-
 
 
 initialModel: Model
@@ -28,7 +24,6 @@ init =
     ( initialModel, Cmd.none )
 
 
-
 -- MESSAGES
 
 
@@ -36,34 +31,65 @@ type Msg
     = NoOp
 
 
+cellIsBody: Position -> Int -> Int -> Bool
+cellIsBody position i j =
+    if { x = i, y = j } == position then
+        True
+    else if { x = i - 1, y = j } == position then
+        True
+    else if { x = i - 2, y = j } == position then
+        True
+    else if { x = i - 3, y = j } == position then
+        True
+    else
+        False
+
 
 -- VIEW
-renderCell: Int -> Int -> Svg (Msg)
-renderCell i j =
-    rect [
-          x (toString (i * 20))
-        , y (toString ( j * 20))
-        , width "20"
-        , height "20"
-        , stroke "white"
-        , strokeWidth "1" ] []
+renderCell: Model -> Int -> Int -> Svg (Msg)
+renderCell model i j =
+    let
+        initialPosition=
+            case head model.snakeBody of
+                Just value ->
+                    value
+                Nothing ->
+                    Position 0 0
+
+        fillColor=
+            if cellIsBody initialPosition i j then
+                "red"
+            else
+                "black"
+    in
+        rect [
+              x (toString (i * 20))
+            , y (toString ( j * 20))
+            , width "20"
+            , height "20"
+            , fill fillColor
+            , stroke "white"
+            , strokeWidth "1" ] []
 
 
-renderGrid: List (Svg Msg)
-renderGrid =
+renderGrid: Model -> List (Svg Msg)
+renderGrid model =
     List.range 0 20
         |> List.concatMap(\y ->
             List.range 0 20
-                |> List.map (\x -> renderCell x y)
+                |> List.map (\x -> renderCell model x y)
            )
 
 
 
 view : Model -> Html Msg
 view model =
+    let
+        grid = renderGrid model
+    in
     svg
         [ width "400", height "400", viewBox "0 0 400 400" ]
-            renderGrid
+            grid
 
 
 
