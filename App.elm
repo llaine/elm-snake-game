@@ -40,7 +40,13 @@ type Msg
 -- VIEW
 renderCell: Int -> Int -> Svg (Msg)
 renderCell i j =
-    rect [ x (toString (i * 20)), y (toString ( j * 20)), width "20", height "20" ] []
+    rect [
+          x (toString (i * 20))
+        , y (toString ( j * 20))
+        , width "20"
+        , height "20"
+        , stroke "white"
+        , strokeWidth "1" ] []
 
 
 renderGrid: List (Svg Msg)
