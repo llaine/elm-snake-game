@@ -9,7 +9,6 @@ import Keyboard exposing (..)
 import Char exposing (..)
 import Time exposing (..)
 
-
 -- MODEL
 
 
@@ -49,9 +48,7 @@ init =
     ( initialModel, Cmd.none )
 
 
-
 -- MESSAGES
-
 
 type Msg
     = NoOp
@@ -129,46 +126,19 @@ view model =
 
 updatePosition : Direction -> Position -> Position
 updatePosition direction position =
-    case direction of
-        Up ->
-            let
-                x =
-                    position.x
-
-                y =
-                    position.y + 1
-            in
-                Position x y
-
-        Down ->
-            let
-                x =
-                    position.x
-
-                y =
-                    position.y - 1
-            in
-                Position x y
-
-        Left ->
-            let
-                x =
-                    position.x - 1
-
-                y =
-                    position.y
-            in
-                Position x y
-
-        Right ->
-            let
-                x =
-                    position.x + 1
-
-                y =
-                    position.y
-            in
-                Position x y
+    let
+        (x, y) =
+            case direction of
+                Up ->
+                    (position.x, position.y + 1)
+                Down ->
+                    (position.x, position.y - 1)
+                Left ->
+                    (position.x - 1, position.y)
+                Right ->
+                    (position.x + 1, position.y)
+    in
+        Position x y
 
 
 directionFromLetter : Char -> Direction
