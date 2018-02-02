@@ -7,18 +7,26 @@ import Svg.Attributes exposing (..)
 import List exposing (..)
 import Keyboard exposing (..)
 import Char exposing (..)
-
+import Time exposing(..)
 
 -- MODEL
-
 type Direction = Up | Down | Left | Right
 type alias Position = { x: Int, y: Int }
-type alias Model = { snakeBody: List Position, direction: Direction }
+type alias Model = {
+    head: Position,
+    direction: Direction,
+    body: List Position,
+    eatablePositions: List Position
+    }
 
 
 initialModel: Model
 initialModel =
-    Model [ Position 8 8 ] Left
+    let
+        initialPosition=Position 8 8
+        eatablePositions= [ Position 0 0, Position 10 5, Position 1 5 ]
+    in
+        Model initialPosition Left [] eatablePositions
 
 
 init : ( Model, Cmd Msg )
@@ -27,52 +35,48 @@ init =
 
 
 -- MESSAGES
-
-
 type Msg =
     NoOp
     | KeyMsg Char
+    | Tick Time
 
 
-cellIsBody: Position -> Int -> Int -> Bool
-cellIsBody position i j =
+cellIsWritableElement: Position -> Int -> Int -> Bool
+cellIsWritableElement position i j =
     if { x = i, y = j } == position then
-        True
-    else if { x = i - 1, y = j } == position then
-        True
-    else if { x = i - 2, y = j } == position then
-        True
-    else if { x = i - 3, y = j } == position then
         True
     else
         False
 
-
 -- VIEW
-renderCell: Model -> Int -> Int -> Svg (Msg)
-renderCell model i j =
-    let
-        initialPosition=
-            case head model.snakeBody of
-                Just value ->
-                    value
-                Nothing ->
-                    Position 0 0
-
-        fillColor=
-            if cellIsBody initialPosition i j then
-                "red"
-            else
-                "black"
-    in
+renderRect : Int -> Int -> String -> Svg (Msg)
+renderRect i j color =
         rect [
               x (toString (i * 20))
             , y (toString ( j * 20))
             , width "20"
             , height "20"
-            , fill fillColor
+            , fill color
             , stroke "white"
             , strokeWidth "1" ] []
+
+
+
+renderCell: Model -> Int -> Int -> Svg (Msg)
+renderCell model i j =
+    let
+        initialPosition=
+            model.head
+        eatablePositionsList=
+            List.map(\p -> (p.x, p.y)) model.eatablePositions
+        fillColor=
+            if (cellIsWritableElement initialPosition i j) ||
+                (List.member (i, j) eatablePositionsList) then
+                "red"
+            else
+                "black"
+    in
+        renderRect i j fillColor
 
 
 renderGrid: Model -> List (Svg Msg)
@@ -81,7 +85,7 @@ renderGrid model =
         |> List.concatMap(\y ->
             List.range 0 20
                 |> List.map (\x -> renderCell model x y)
-           )
+        )
 
 
 
@@ -93,8 +97,6 @@ view model =
     svg
         [ width "400", height "400", viewBox "0 0 400 400" ]
             grid
-
-
 
 
 
@@ -125,49 +127,50 @@ updatePosition direction position = case direction of
             in
                 Position x y
 
+
+directionFromLetter : Char -> Direction
+directionFromLetter letter = case letter of
+    'k' ->
+        Down
+    'j' ->
+        Up
+    'h' ->
+        Left
+    'l' ->
+        Right
+    _ ->
+        Up
+
+
 -- UPDATE
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         KeyMsg code ->
             let
-                nextPosition =
-                    case code of
-                        'k' ->
-                            Up
-                        'j' ->
-                            Down
-                        'h' ->
-                            Left
-                        'l' ->
-                            Right
-                        _ ->
-                            model.direction
-                headOfTheBody= case head model.snakeBody of
-                    Just a ->
-                        a
-                    Nothing ->
-                        Position 0 0
-                bodyUpdated=updatePosition nextPosition headOfTheBody
+                nextPosition=directionFromLetter code
             in
-                ( Model [bodyUpdated] nextPosition , Cmd.none )
+                ( Model model.head nextPosition model.body model.eatablePositions, Cmd.none )
+        Tick time ->
+            let
+                snakeHead=updatePosition model.direction model.head
+            in
+                ( Model snakeHead model.direction model.body model.eatablePositions, Cmd.none  )
         NoOp ->
             ( model, Cmd.none )
 
 
 
-
 -- SUBSCRIPTIONS
-
-
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Keyboard.presses (\code -> KeyMsg (fromCode code))
-
+    Sub.batch
+        [
+            Keyboard.presses (\code -> KeyMsg (fromCode code)),
+            Time.every second Tick
+        ]
 
 -- MAIN
-
-
 main : Program Never Model Msg
 main =
     program
