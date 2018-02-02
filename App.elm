@@ -5,7 +5,8 @@ import Html exposing (Html, div, text, program)
 import Svg exposing (..)
 import Svg.Attributes exposing (..)
 import List exposing (..)
-import Keyboard
+import Keyboard exposing (..)
+import Char exposing (..)
 
 
 -- MODEL
@@ -30,7 +31,7 @@ init =
 
 type Msg =
     NoOp
-    | KeyMsg Keyboard.KeyCode
+    | KeyMsg Char
 
 
 cellIsBody: Position -> Int -> Int -> Bool
@@ -96,19 +97,63 @@ view model =
 
 
 
+
+updatePosition : Direction -> Position -> Position
+updatePosition direction position = case direction of
+        Up ->
+            let
+                x=position.x
+                y=position.y + 1
+            in
+                Position x y
+        Down ->
+            let
+                x=position.x
+                y=position.y - 1
+            in
+                Position x y
+        Left ->
+            let
+                x=position.x - 1
+                y=position.y
+            in
+                Position x y
+        Right ->
+            let
+                x=position.x + 1
+                y=position.y
+            in
+                Position x y
+
 -- UPDATE
-
-
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         KeyMsg code ->
             let
-                bodyUpdated=model.snakeBody -- TODO
+                nextPosition =
+                    case code of
+                        'k' ->
+                            Up
+                        'j' ->
+                            Down
+                        'h' ->
+                            Left
+                        'l' ->
+                            Right
+                        _ ->
+                            model.direction
+                headOfTheBody= case head model.snakeBody of
+                    Just a ->
+                        a
+                    Nothing ->
+                        Position 0 0
+                bodyUpdated=updatePosition nextPosition headOfTheBody
             in
-                ( Model model.snakeBody Down , Cmd.none )
+                ( Model [bodyUpdated] nextPosition , Cmd.none )
         NoOp ->
             ( model, Cmd.none )
+
 
 
 
@@ -117,9 +162,7 @@ update msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-        Sub.batch
-            [ Keyboard.downs KeyMsg]
-
+    Keyboard.presses (\code -> KeyMsg (fromCode code))
 
 
 -- MAIN
